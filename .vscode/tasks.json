@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "kill cactusbar",
+      "type": "shell",
+      "command": "pkill -x cactusbar; sleep 0.3; true",
+      "presentation": { "reveal": "never", "close": true }
+    }
+  ]
+}

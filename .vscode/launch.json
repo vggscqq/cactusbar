@@ -13,7 +13,8 @@
         }
       },
       "args": [],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "kill cactusbar"
     }
   ]
 }

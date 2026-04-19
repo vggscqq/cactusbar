@@ -54,14 +54,9 @@ pub fn new_music() -> gtk4::Box {
     box_.append(&cover_shell);
     box_.append(&text_shell);
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&box_);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+    let (popup_music, menu) = make_popup();
     menu.set_widget_name("music-menu");
+    menu.set_spacing(6);
     menu.set_size_request(240, -1);
 
     let popup_title = gtk4::Label::new(None);
@@ -88,24 +83,12 @@ pub fn new_music() -> gtk4::Box {
     controls.append(&btn_play);
     controls.append(&btn_next);
     menu.append(&controls);
-    popover.set_child(Some(&menu));
 
     btn_prev.connect_clicked(|_| { run_detached_args("playerctl", &["previous"]); });
     btn_play.connect_clicked(|_| { run_detached_args("playerctl", &["play-pause"]); });
     btn_next.connect_clicked(|_| { run_detached_args("playerctl", &["next"]); });
 
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    box_.add_controller(motion);
+    attach_hover_popup(&box_, &popup_music, || {});
 
     let step = std::rc::Rc::new(std::cell::Cell::new(0usize));
     let box_weak = box_.downgrade();

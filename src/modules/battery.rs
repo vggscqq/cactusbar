@@ -108,15 +108,8 @@ pub fn new_battery(cfg: &crate::config::Config, device: &str, _name: &str) -> gt
     icon_box.append(&batt_icon);
     module.container.append(&icon_box);
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let popup_box = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup, popup_box) = make_popup();
     popup_box.set_widget_name("battery-popup");
-    popover.set_child(Some(&popup_box));
 
     let dev_label = gtk4::Label::new(None);
     dev_label.add_css_class("battery-popup-device");
@@ -136,19 +129,7 @@ pub fn new_battery(cfg: &crate::config::Config, device: &str, _name: &str) -> gt
     popup_box.append(&status_lbl);
     popup_box.append(&time_lbl);
 
-    // Hover popup
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    attach_hover_popup(&module.container, &popup, || {});
 
     let container_weak = module.container.downgrade();
     let icon_weak = batt_icon.downgrade();

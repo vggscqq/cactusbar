@@ -14,15 +14,8 @@ pub fn new_wallpaper(cfg: &crate::config::Config) -> gtk4::Widget {
     let interval_min = cfg.wallpaper.interval.max(1) as u64;
     let on_click = cfg.wallpaper.on_click.clone();
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&btn);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup_wp, menu) = make_popup();
     menu.set_widget_name("wallpaper-menu");
-    popover.set_child(Some(&menu));
 
     let title = gtk4::Label::new(Some("Wallpaper"));
     title.set_xalign(0.0);
@@ -36,19 +29,7 @@ pub fn new_wallpaper(cfg: &crate::config::Config) -> gtk4::Widget {
     });
     menu.append(&shuffle_btn);
 
-    // Hover popup
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    btn.add_controller(motion);
+    attach_hover_popup(&btn, &popup_wp, || {});
 
     // Click
     let wp_dir3 = wp_dir.clone();

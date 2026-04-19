@@ -7,15 +7,9 @@ use super::helpers::*;
 pub fn new_date_clock() -> gtk4::Box {
     let module = TextModule::new("clock-date");
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+    let (popup_date, menu) = make_popup();
     menu.set_widget_name("calendar-menu");
-    popover.set_child(Some(&menu));
+    menu.set_spacing(6);
 
     let month_nav = gtk4::Box::new(gtk4::Orientation::Horizontal, 4);
     month_nav.set_halign(gtk4::Align::Fill);
@@ -125,19 +119,7 @@ pub fn new_date_clock() -> gtk4::Box {
 
     (update_calendar)();
 
-    // Hover popup
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    attach_hover_popup(&module.container, &popup_date, || {});
 
     {
         let sy = shown_year.clone(); let sm = shown_month.clone(); let uc = update_calendar.clone();
@@ -177,15 +159,8 @@ pub fn new_date_clock() -> gtk4::Box {
 pub fn new_time_clock(cfg: &crate::config::Config) -> gtk4::Box {
     let module = TextModule::new("clock-time");
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup_time, menu) = make_popup();
     menu.set_widget_name("world-clock-menu");
-    popover.set_child(Some(&menu));
 
     let title = gtk4::Label::new(Some("World Clocks"));
     title.set_widget_name("world-clock-menu-title");
@@ -208,23 +183,19 @@ pub fn new_time_clock(cfg: &crate::config::Config) -> gtk4::Box {
         cfg.clocks.on_click.clone()
     };
 
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    attach_hover_popup(&module.container, &popup_time, || {});
 
     attach_click(&module.container, || {}, move || { run_detached(&on_click_cmd); });
 
     let module_weak = module.container.downgrade();
     let label_weak = module.label.downgrade();
+
+    // Show current time immediately so the clock is visible on startup.
+    {
+        let now = chrono::Local::now();
+        module.label.set_label(&now.format("%H:%M").to_string());
+        module.container.set_visible(true);
+    }
 
     glib::timeout_add_local(Duration::from_secs(1), move || {
         if module_weak.upgrade().is_none() { return glib::ControlFlow::Break; }

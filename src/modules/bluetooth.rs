@@ -12,15 +12,8 @@ pub fn new_bluetooth(_cfg: &crate::config::Config) -> gtk4::Box {
     icon.set_pixel_size(16);
     module.container.append(&icon);
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup, menu) = make_popup();
     menu.set_widget_name("bluetooth-menu");
-    popover.set_child(Some(&menu));
 
     let title = gtk4::Label::new(Some("Bluetooth"));
     title.set_widget_name("bluetooth-menu-title");
@@ -30,26 +23,12 @@ pub fn new_bluetooth(_cfg: &crate::config::Config) -> gtk4::Box {
     let device_list = gtk4::Box::new(gtk4::Orientation::Vertical, 2);
     menu.append(&device_list);
 
-    // Hover popup
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    let menu_weak = device_list.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() {
-            // Refresh device list on open
-            if let Some(list) = menu_weak.upgrade() {
-                refresh_bt_list(&list);
-            }
-            p.popup();
-        }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    {
+        let list_weak = device_list.downgrade();
+        attach_hover_popup(&module.container, &popup, move || {
+            if let Some(list) = list_weak.upgrade() { refresh_bt_list(&list); }
+        });
+    }
 
     let container_weak = module.container.downgrade();
     let icon_weak = icon.downgrade();

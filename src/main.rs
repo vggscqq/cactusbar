@@ -13,6 +13,10 @@ use glib::prelude::*;
 
 pub static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 
+thread_local! {
+    pub static APP: std::cell::RefCell<Option<gtk4::Application>> = std::cell::RefCell::new(None);
+}
+
 fn configure_graphics_backend() {
     if std::env::var_os("GSK_RENDERER").is_none() {
         // Vulkan can cause popup flicker on some Intel Mesa stacks.
@@ -47,6 +51,7 @@ fn main() {
 
     let css_path = std::rc::Rc::new(css_path);
     application.connect_activate(move |app| {
+        crate::APP.with(|a| *a.borrow_mut() = Some(app.clone()));
         let css_path = css_path.clone();
         let display = gdk4::Display::default();
 

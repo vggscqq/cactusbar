@@ -46,31 +46,13 @@ fn lock_icon(locked: bool) -> &'static str {
 pub fn new_language(cfg: &crate::config::Config) -> gtk4::Box {
     let module = TextModule::new("language");
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup_lang, menu) = make_popup();
     menu.set_widget_name("language-menu");
-    popover.set_child(Some(&menu));
 
     let languages = cfg.languages.clone();
     let current_layout = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
 
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    attach_hover_popup(&module.container, &popup_lang, || {});
 
     let refresh_popup = {
         let menu_weak = menu.downgrade();

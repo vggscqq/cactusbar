@@ -11,15 +11,8 @@ pub fn new_clipboard() -> gtk4::Widget {
     btn.set_has_frame(false);
     btn.set_widget_name("clipboard");
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&btn);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup_clip, menu) = make_popup();
     menu.set_widget_name("clipboard-menu");
-    popover.set_child(Some(&menu));
 
     let title = gtk4::Label::new(Some("Clipboard"));
     title.set_xalign(0.0);
@@ -32,32 +25,21 @@ pub fn new_clipboard() -> gtk4::Widget {
     // Use Arc<Mutex<>> so it can be shared with the watcher thread
     let history: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
-    // Hover popup
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    let list_weak = list_box.downgrade();
-    let history_clone = history.clone();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() {
+    {
+        let list_weak = list_box.downgrade();
+        let history_clone = history.clone();
+        attach_hover_popup(&btn, &popup_clip, move || {
             if let Some(list) = list_weak.upgrade() {
                 let h = history_clone.lock().unwrap();
                 rebuild_clipboard_list(&list, &h);
             }
-            p.popup();
-        }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    btn.add_controller(motion);
+        });
+    }
 
-    let popover_weak3 = popover.downgrade();
+    let popup_clip_weak = popup_clip.downgrade();
     btn.connect_clicked(move |_| {
-        if let Some(p) = popover_weak3.upgrade() {
-            if p.is_visible() { p.popdown(); } else { p.popup(); }
+        if let Some(p) = popup_clip_weak.upgrade() {
+            if p.is_visible() { p.set_visible(false); } else { p.present(); }
         }
     });
 

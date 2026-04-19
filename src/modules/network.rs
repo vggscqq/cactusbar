@@ -19,15 +19,8 @@ pub fn new_network(cfg: &crate::config::Config) -> gtk4::Box {
     }
     module.container.append(&icon_box);
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup_net, menu) = make_popup();
     menu.set_widget_name("wifi-menu");
-    popover.set_child(Some(&menu));
 
     let wifi_title = gtk4::Label::new(Some("Wi-Fi"));
     wifi_title.set_widget_name("wifi-menu-title");
@@ -39,25 +32,12 @@ pub fn new_network(cfg: &crate::config::Config) -> gtk4::Box {
 
     let on_click = cfg.network.on_click.clone();
 
-    // Hover popup
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    let list_weak = list_box.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() {
-            if let Some(list) = list_weak.upgrade() {
-                refresh_wifi_list(&list);
-            }
-            p.popup();
-        }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    {
+        let list_weak = list_box.downgrade();
+        attach_hover_popup(&module.container, &popup_net, move || {
+            if let Some(list) = list_weak.upgrade() { refresh_wifi_list(&list); }
+        });
+    }
 
     // Right click -> network manager
     attach_click(&module.container,

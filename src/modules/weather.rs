@@ -45,15 +45,8 @@ fn read_weather(lat: &str, lon: &str) -> Option<WeatherData> {
 pub fn new_weather(cfg: &crate::config::Config) -> gtk4::Box {
     let module = TextModule::new("custom-weather");
 
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(&module.container);
-
-    let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+    let (popup_weather, menu) = make_popup();
     menu.set_widget_name("weather-menu");
-    popover.set_child(Some(&menu));
 
     let title_text = if cfg.weather.location.is_empty() {
         "Weather".to_string()
@@ -74,18 +67,7 @@ pub fn new_weather(cfg: &crate::config::Config) -> gtk4::Box {
         forecast_rows.push(row);
     }
 
-    let motion = gtk4::EventControllerMotion::new();
-    let popover_weak = popover.downgrade();
-    motion.connect_enter(move |_, _, _| {
-        if let Some(p) = popover_weak.upgrade() { p.popup(); }
-    });
-    let popover_weak2 = popover.downgrade();
-    motion.connect_leave(move |_| {
-        if let Some(p) = popover_weak2.upgrade() {
-            glib::timeout_add_local_once(Duration::from_millis(100), move || { p.popdown(); });
-        }
-    });
-    module.container.add_controller(motion);
+    attach_hover_popup(&module.container, &popup_weather, || {});
 
     let on_click = cfg.weather.on_click.clone();
     attach_click(&module.container, move || { run_detached(&on_click); }, || {});

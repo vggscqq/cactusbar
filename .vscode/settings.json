@@ -3,5 +3,8 @@
         "dbus",
         "mpris",
         "xesam"
-    ]
+    ],
+    "chat.tools.terminal.autoApprove": {
+        "cargo build": true
+    }
 }

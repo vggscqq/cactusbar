@@ -186,42 +186,132 @@ where
     });
 }
 
-pub fn make_popup(anchor: &impl IsA<gtk4::Widget>) -> (gtk4::Popover, gtk4::Box) {
-    let popover = gtk4::Popover::new();
-    popover.add_css_class("status-popup");
-    popover.set_has_arrow(false);
-    popover.set_autohide(true);
-    popover.set_parent(anchor);
+/// Create a layer-shell overlay window to use as a hover popup.
+///
+/// Returns `(window, content_box)`.  Add children to `content_box`.
+pub fn make_popup() -> (gtk4::Window, gtk4::Box) {
+    use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
+
+    let mut builder = gtk4::Window::builder()
+        .decorated(false)
+        .resizable(false);
+
+    if let Some(app) = crate::APP.with(|a| a.borrow().clone()) {
+        builder = builder.application(&app);
+    }
+
+    let popup = builder.build();
+    popup.init_layer_shell();
+    popup.set_layer(Layer::Overlay);
+    popup.set_anchor(Edge::Top, true);
+    popup.set_anchor(Edge::Left, true);
+    popup.set_exclusive_zone(-1);
+    popup.set_keyboard_mode(KeyboardMode::None);
+    popup.add_css_class("popup-window");
 
     let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
-    popover.set_child(Some(&menu));
+    popup.set_child(Some(&menu));
 
-    (popover, menu)
+    (popup, menu)
 }
 
-pub fn attach_hover_popup<W>(anchor: &W, popover: gtk4::Popover)
+/// Position `popup` just below `anchor` on screen.
+fn position_popup_below(popup: &gtk4::Window, anchor: &gtk4::Widget) {
+    use gtk4_layer_shell::{Edge, LayerShell};
+
+    let bar_win = match anchor
+        .ancestor(gtk4::Window::static_type())
+        .and_then(|o| o.downcast::<gtk4::Widget>().ok())
+    {
+        Some(w) => w,
+        None => { popup.set_margin(Edge::Top, 34); return; }
+    };
+
+    let bar_h = bar_win.height().max(1);
+
+    let x = anchor
+        .compute_bounds(&bar_win)
+        .map(|b| b.x().max(0.0) as i32)
+        .unwrap_or(0);
+
+    popup.set_margin(Edge::Left, x);
+    popup.set_margin(Edge::Top, bar_h);
+}
+
+/// Attach a hover-triggered layer-shell popup window to `anchor`.
+///
+/// `on_open` is called each time the pointer enters the anchor (use it to
+/// refresh popup contents).  Pass `|| {}` when no refresh is needed.
+///
+/// The popup stays open while the pointer is over either the anchor or the
+/// popup itself; it closes 150 ms after the pointer leaves both regions.
+///
+/// The popup window is kept alive by the motion-controller closure tied to
+/// `anchor`; no external reference needs to be held.
+pub fn attach_hover_popup<W, F>(anchor: &W, popup: &gtk4::Window, on_open: F)
 where
     W: IsA<gtk4::Widget>,
+    F: Fn() + 'static,
 {
-    let popover_weak = popover.downgrade();
-    let motion = gtk4::EventControllerMotion::new();
+    let popup_weak = popup.downgrade();
+    let over_anchor = std::rc::Rc::new(std::cell::Cell::new(false));
+    let over_popup  = std::rc::Rc::new(std::cell::Cell::new(false));
+
+    // ── anchor motion ────────────────────────────────────────────────────────
+    let anchor_motion = gtk4::EventControllerMotion::new();
     {
-        let popover_weak = popover_weak.clone();
-        motion.connect_enter(move |_, _x, _y| {
-            if let Some(p) = popover_weak.upgrade() {
-                p.popup();
+        // Hold a strong GObject reference inside this closure so the window
+        // lives exactly as long as the anchor widget does.
+        let popup_strong = popup.clone();
+        let pw = popup_weak.clone();
+        let oa = over_anchor.clone();
+        anchor_motion.connect_enter(move |ctrl, _, _| {
+            let _ = &popup_strong; // keep window alive
+            oa.set(true);
+            on_open();
+            if let Some(p) = pw.upgrade() {
+                if let Some(widget) = ctrl.widget() {
+                    position_popup_below(&p, &widget);
+                }
+                p.present();
             }
         });
     }
     {
-        let popover_weak = popover_weak.clone();
-        motion.connect_leave(move |_| {
-            if let Some(p) = popover_weak.upgrade() {
-                glib::timeout_add_local_once(Duration::from_millis(100), move || {
-                    p.popdown();
-                });
-            }
+        let oa = over_anchor.clone();
+        let op = over_popup.clone();
+        let pw = popup_weak.clone();
+        anchor_motion.connect_leave(move |_| {
+            oa.set(false);
+            let oa2 = oa.clone(); let op2 = op.clone(); let pw2 = pw.clone();
+            glib::timeout_add_local_once(Duration::from_millis(150), move || {
+                if !oa2.get() && !op2.get() {
+                    if let Some(p) = pw2.upgrade() { p.set_visible(false); }
+                }
+            });
         });
     }
-    anchor.add_controller(motion);
+    anchor.add_controller(anchor_motion);
+
+    // ── popup motion ─────────────────────────────────────────────────────────
+    let popup_motion = gtk4::EventControllerMotion::new();
+    {
+        let op = over_popup.clone();
+        popup_motion.connect_enter(move |_, _, _| { op.set(true); });
+    }
+    {
+        let oa = over_anchor.clone();
+        let op = over_popup.clone();
+        let pw = popup_weak.clone();
+        popup_motion.connect_leave(move |_| {
+            op.set(false);
+            let oa2 = oa.clone(); let op2 = op.clone(); let pw2 = pw.clone();
+            glib::timeout_add_local_once(Duration::from_millis(150), move || {
+                if !oa2.get() && !op2.get() {
+                    if let Some(p) = pw2.upgrade() { p.set_visible(false); }
+                }
+            });
+        });
+    }
+    popup.add_controller(popup_motion);
 }

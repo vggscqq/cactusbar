@@ -51,6 +51,13 @@ impl CpuSampler {
 
 pub fn new_cpu() -> gtk4::Box {
     let module = TextModule::new("cpu");
+    module.container.set_spacing(4);
+
+    let icon = gtk4::Image::from_icon_name("cpu-symbolic");
+    icon.set_pixel_size(14);
+    icon.add_css_class("module-icon");
+    module.container.prepend(&icon);
+
     let sampler = std::rc::Rc::new(std::cell::RefCell::new(CpuSampler::new()));
     let container_weak = module.container.downgrade();
     let label_weak = module.label.downgrade();
@@ -68,6 +75,13 @@ pub fn new_cpu() -> gtk4::Box {
 
 pub fn new_memory() -> gtk4::Box {
     let module = TextModule::new("memory");
+    module.container.set_spacing(4);
+
+    let icon = gtk4::Image::from_icon_name("memory-symbolic");
+    icon.set_pixel_size(14);
+    icon.add_css_class("module-icon");
+    module.container.prepend(&icon);
+
     let container_weak = module.container.downgrade();
     let label_weak = module.label.downgrade();
 
@@ -107,6 +121,13 @@ fn read_memory() -> String {
 
 pub fn new_temperature() -> gtk4::Box {
     let module = TextModule::new("temperature");
+    module.container.set_spacing(4);
+
+    let icon = gtk4::Image::from_icon_name("temperature-symbolic");
+    icon.set_pixel_size(14);
+    icon.add_css_class("module-icon");
+    module.container.prepend(&icon);
+
     let container_weak = module.container.downgrade();
     let label_weak = module.label.downgrade();
 
