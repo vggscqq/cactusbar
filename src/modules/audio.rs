@@ -127,6 +127,7 @@ fn build_device_row(device: &AudioDevice, is_default: bool, is_sink: bool) -> gt
 
     let mute_btn = gtk4::Button::from_icon_name(volume_icon(device.volume, device.muted));
     mute_btn.set_has_frame(false);
+    mute_btn.set_valign(gtk4::Align::Center);
     mute_btn.add_css_class("audio-mute-btn");
     vol_row.append(&mute_btn);
 
@@ -134,14 +135,17 @@ fn build_device_row(device: &AudioDevice, is_default: bool, is_sink: bool) -> gt
     scale.set_value(device.volume as f64);
     scale.set_draw_value(false);
     scale.set_hexpand(true);
+    scale.set_valign(gtk4::Align::Center);
     scale.set_size_request(180, -1);
     scale.add_css_class("audio-slider");
     scale.add_mark(100.0, gtk4::PositionType::Bottom, None);
-    if device.muted { scale.set_sensitive(false); }
+    if device.muted { scale.set_sensitive(false); scale.add_css_class("audio-slider-muted"); }
     vol_row.append(&scale);
 
-    let pct_lbl = gtk4::Label::new(Some(&format!("{:3}%", device.volume)));
-    pct_lbl.set_width_chars(5);
+    let pct_lbl = gtk4::Label::new(Some(&format!("{}%", device.volume)));
+    pct_lbl.set_size_request(46, -1);
+    pct_lbl.set_xalign(1.0);
+    pct_lbl.set_valign(gtk4::Align::Center);
     pct_lbl.add_css_class("audio-vol-pct");
     vol_row.append(&pct_lbl);
 
@@ -153,7 +157,7 @@ fn build_device_row(device: &AudioDevice, is_default: bool, is_sink: bool) -> gt
     let mute_weak  = mute_btn.downgrade();
     scale.connect_value_changed(move |s| {
         let val = s.value().round() as i32;
-        if let Some(l) = pct_weak.upgrade()  { l.set_label(&format!("{:3}%", val)); }
+        if let Some(l) = pct_weak.upgrade()  { l.set_label(&format!("{}%", val)); }
         if let Some(b) = mute_weak.upgrade() { b.set_icon_name(volume_icon(val, false)); }
         let pct = format!("{}%", val);
         if is_sink {
@@ -173,9 +177,10 @@ fn build_device_row(device: &AudioDevice, is_default: bool, is_sink: bool) -> gt
         muted_cell.set(now_muted);
         if let Some(s) = scale_weak.upgrade() {
             s.set_sensitive(!now_muted);
+            if now_muted { s.add_css_class("audio-slider-muted"); } else { s.remove_css_class("audio-slider-muted"); }
             let vol = s.value().round() as i32;
             btn.set_icon_name(volume_icon(vol, now_muted));
-            if let Some(l) = pct_weak2.upgrade() { l.set_label(&format!("{:3}%", vol)); }
+            if let Some(l) = pct_weak2.upgrade() { l.set_label(&format!("{}%", vol)); }
         }
         let mute_str = if now_muted { "1" } else { "0" };
         if is_sink {
@@ -203,6 +208,7 @@ fn refresh_audio_menu(menu: &gtk4::Box) {
     let out_lbl = gtk4::Label::new(Some("OUTPUTS"));
     out_lbl.add_css_class("audio-section-label");
     out_lbl.set_xalign(0.0);
+    out_lbl.set_valign(gtk4::Align::Center);
     menu.append(&out_lbl);
     if sinks.is_empty() {
         let none = gtk4::Label::new(Some("No outputs found"));
@@ -219,6 +225,7 @@ fn refresh_audio_menu(menu: &gtk4::Box) {
     let in_lbl = gtk4::Label::new(Some("INPUTS"));
     in_lbl.add_css_class("audio-section-label");
     in_lbl.set_xalign(0.0);
+    in_lbl.set_valign(gtk4::Align::Center);
     menu.append(&in_lbl);
     if sources.is_empty() {
         let none = gtk4::Label::new(Some("No inputs found"));

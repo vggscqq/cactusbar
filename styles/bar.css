@@ -64,7 +64,7 @@ button:hover {
   background-color: rgba(0, 0, 0, 0.5);
   margin-right: 4px;
 
-  font-size: 13px;
+  font-size: 18px;
 }
 
 #custom-wallpaper {
@@ -74,7 +74,7 @@ button:hover {
   color: #ffffff;
   margin-right: 4px;
   padding: 0 12px;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 #custom-wallpaper:hover {
@@ -121,12 +121,12 @@ button:hover {
 
 .focused-app-ws-badge {
   padding: 0 7px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 900;
 }
 
 .focused-app-ws-header {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
   opacity: 0.6;
   margin-top: 4px;
@@ -155,7 +155,7 @@ button:hover {
 }
 
 .focused-app-monitor-header {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
   opacity: 0.5;
   margin-bottom: 4px;
@@ -186,7 +186,7 @@ button:hover {
   background-color: #64727d;
   margin-top: 4px;
   margin-bottom: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -299,7 +299,7 @@ button:hover {
 }
 
 #music-menu-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 900;
   min-width: 0;
 }
@@ -358,7 +358,7 @@ button:hover {
 #music-menu-duration {
   margin-top: 4px;
   min-width: 36px;
-  font-size: 14px;
+  font-size: 16px;
   opacity: 0.82;
 }
 
@@ -457,7 +457,7 @@ button:hover {
   margin-bottom: 0;
   padding-left: 4px;
   padding-right: 4px;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 900;
   border: 3px solid white;
   border-radius: 8px;
@@ -544,12 +544,13 @@ button:hover {
 }
 
 #pipewire {
-  border-bottom: 3px solid #f1c40f;
+  border-bottom: 3px solid #ffffff;
   border-radius: 24px;
 
   background: rgba(241, 196, 15, 0.7);
   padding-left: 8px;
   padding-right: 8px;
+  font-size: 16px;
 }
 
 #pipewire label {
@@ -708,14 +709,14 @@ button:hover {
 #audio-menu-title,
 #bluetooth-menu-title,
 #wifi-menu-title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 900;
   margin-bottom: 4px;
 }
 
 #calendar-menu-weekdays label {
   opacity: 0.75;
-  font-size: 12px;
+  font-size: 16px;
 }
 
 #calendar-menu-grid label {
@@ -733,30 +734,31 @@ button:hover {
 
 .world-clock-row,
 .weather-forecast-row {
-  font-size: 13px;
+  font-size: 18px;
   padding: 1px 0;
 }
 
 .audio-menu-section {
   opacity: 0.75;
-  font-size: 12px;
+  font-size: 16px;
   margin-top: 4px;
 }
 
 .audio-section-label {
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 900;
   opacity: 0.55;
   margin-top: 6px;
+  min-height: 20px;
   letter-spacing: 0.8px;
 }
 
 .audio-device-row {
-  padding: 2px 0;
+  padding: 4px 0;
 }
 
 .audio-device-name {
-  font-size: 13px;
+  font-size: 18px;
 }
 
 .audio-device-default {
@@ -774,17 +776,16 @@ button:hover {
 .audio-mute-btn {
   padding: 0 2px;
   min-width: 22px;
-  min-height: 22px;
 }
 
 .audio-vol-pct {
-  font-size: 12px;
+  font-size: 16px;
   opacity: 0.75;
   min-width: 38px;
 }
 
 .audio-empty {
-  font-size: 12px;
+  font-size: 16px;
   opacity: 0.55;
   padding: 2px 0;
 }
@@ -797,6 +798,10 @@ scale.audio-slider trough {
 scale.audio-slider trough highlight {
   background: rgba(241, 196, 15, 0.9);
   border-radius: 2px;
+}
+
+scale.audio-slider.audio-slider-muted trough highlight {
+  background: rgba(160, 160, 160, 0.5);
 }
 
 scale.audio-slider marks mark indicator {
@@ -813,14 +818,14 @@ scale.audio-slider marks mark indicator {
 
 .bluetooth-status-row {
   opacity: 0.8;
-  font-size: 12px;
+  font-size: 16px;
   margin-bottom: 4px;
 }
 
 .audio-device-row,
 .wifi-network-row,
 .bluetooth-device-row {
-  font-size: 13px;
+  font-size: 18px;
   padding: 1px 0;
 }
 
@@ -841,7 +846,7 @@ scale.audio-slider marks mark indicator {
 .wifi-info-title,
 .wifi-info-empty {
   opacity: 0.75;
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .wifi-info-group {
@@ -865,13 +870,13 @@ scale.audio-slider marks mark indicator {
 }
 
 .wifi-info-heading {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 900;
 }
 
 .wifi-info-subtitle {
   opacity: 0.7;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .wifi-info-row {
@@ -881,7 +886,7 @@ scale.audio-slider marks mark indicator {
 
 .wifi-info-label,
 .wifi-info-value {
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .wifi-info-label {
@@ -895,7 +900,7 @@ scale.audio-slider marks mark indicator {
 }
 
 .language-row {
-  font-size: 15px;
+  font-size: 17px;
   padding: 6px 12px;
 }
 
