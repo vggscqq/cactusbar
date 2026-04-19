@@ -9,12 +9,12 @@ modules:
   focused_app: true
   music: true
   mode: true
-  scratchpad: true
+  scratchpad: false
   date_clock: true
   time_clock: true
-  notification: true
-  mpd: true
-  wallpaper: true
+  notification: false
+  mpd: false
+  wallpaper: false
   clipboard: true
   weather: true
   pipewire: true

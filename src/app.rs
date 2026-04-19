@@ -155,7 +155,7 @@ fn load_css(css_path: &str) {
 
 fn load_user_or_default_css() -> String {
     if let Ok(home) = std::env::var("HOME") {
-        let path = format!("{}/.config/status-bar/style.css", home);
+        let path = format!("{}/.config/cactusbar/style.css", home);
         if let Ok(data) = std::fs::read_to_string(&path) {
             log::info!("loaded css from {}", path);
             return data;

@@ -264,7 +264,7 @@ fn config_path() -> PathBuf {
         return PathBuf::from(p);
     }
     let home = dirs_home();
-    PathBuf::from(format!("{}/.config/status-bar/config.yaml", home))
+    PathBuf::from(format!("{}/.config/cactusbar/config.yaml", home))
 }
 
 pub fn load() -> Config {

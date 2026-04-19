@@ -13,8 +13,17 @@ use glib::prelude::*;
 
 pub static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 
+fn configure_graphics_backend() {
+    if std::env::var_os("GSK_RENDERER").is_none() {
+        // Vulkan can cause popup flicker on some Intel Mesa stacks.
+        std::env::set_var("GSK_RENDERER", "ngl");
+        log::info!("GSK_RENDERER not set; defaulting to ngl");
+    }
+}
+
 fn main() {
     env_logger::init();
+    configure_graphics_backend();
     RUNTIME.get_or_init(|| tokio::runtime::Runtime::new().expect("tokio runtime"));
 
     let args: Vec<String> = std::env::args().collect();
