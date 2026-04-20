@@ -114,9 +114,8 @@ fn read_memory() -> String {
     let available = *values.get("MemAvailable").unwrap_or(&0);
     if total == 0 { return String::new(); }
     let used = total - available;
-    let used_mb = used / 1024;
-    let total_mb = total / 1024;
-    format!("{}M", used_mb)
+    let pct = used * 100 / total;
+    format!("{:2}%", pct)
 }
 
 pub fn new_temperature() -> gtk4::Box {

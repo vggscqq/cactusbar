@@ -56,6 +56,8 @@ pub struct Modules {
     #[serde(default)]
     pub keyboard_state: bool,
     #[serde(default = "default_true")]
+    pub keyboard_layout: bool,
+    #[serde(default = "default_true")]
     pub language: bool,
     #[serde(default = "default_true")]
     pub battery: bool,
@@ -92,6 +94,7 @@ impl Default for Modules {
             memory: true,
             temperature: true,
             keyboard_state: false,
+            keyboard_layout: true,
             language: true,
             battery: true,
             tray: true,

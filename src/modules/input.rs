@@ -175,6 +175,137 @@ pub fn new_mode() -> gtk4::Box {
     module.container
 }
 
+pub fn new_keyboard_layout() -> gtk4::Box {
+    let module = TextModule::new("keyboard-layout");
+    let container_weak = module.container.downgrade();
+    let label_weak = module.label.downgrade();
+
+    // Initial read
+    let code = read_keyboard_layout();
+    if !code.is_empty() {
+        module.label.set_label(&format_layout_label(&code));
+        module.container.set_visible(true);
+    }
+
+    let desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
+    if desktop.to_ascii_lowercase().contains("hyprland") {
+        let rx = super::events::hypr_event_channel();
+        glib::MainContext::default().spawn_local(async move {
+            while let Ok(event) = rx.recv().await {
+                if let Some(rest) = event.strip_prefix("activelayout>>") {
+                    if let Some((_kbd, layout)) = rest.split_once(',') {
+                        let code: String = layout.chars().take(2).collect::<String>().to_uppercase();
+                        let text = format_layout_label(&code);
+                        if let Some(l) = label_weak.upgrade() { l.set_label(&text); }
+                        if let Some(c) = container_weak.upgrade() { c.set_visible(true); }
+                    }
+                }
+            }
+        });
+    } else {
+        glib::timeout_add_local(Duration::from_secs(2), move || {
+            if container_weak.upgrade().is_none() { return glib::ControlFlow::Break; }
+            let code = read_keyboard_layout();
+            if !code.is_empty() {
+                let text = format_layout_label(&code);
+                if let Some(l) = label_weak.upgrade() { l.set_label(&text); }
+                if let Some(c) = container_weak.upgrade() { c.set_visible(true); }
+            }
+            glib::ControlFlow::Continue
+        });
+    }
+
+    module.container
+}
+
+fn read_keyboard_layout() -> String {
+    let desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default();
+    if desktop.to_ascii_lowercase().contains("hyprland") {
+        get_layout_hyprland()
+    } else {
+        get_layout_niri()
+    }
+}
+
+fn get_layout_hyprland() -> String {
+    let out = run_cmd(&["hyprctl", "-j", "devices"]);
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&out) {
+        if let Some(kbs) = json["keyboards"].as_array() {
+            let kb = kbs.iter().find(|k| k["main"].as_bool() == Some(true))
+                       .or_else(|| kbs.first());
+            if let Some(kb) = kb {
+                let layout = kb["active_keymap"].as_str().unwrap_or("");
+                return layout.chars().take(2).collect::<String>().to_uppercase();
+            }
+        }
+    }
+    String::new()
+}
+
+fn get_layout_niri() -> String {
+    let out = run_cmd(&["niri", "msg", "keyboard-layouts"]);
+    for line in out.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('*') {
+            // Format: "* N Layout Name" or "*N: Layout Name"
+            let after_star = trimmed.trim_start_matches('*').trim();
+            // skip the leading number token if present
+            let rest = if after_star.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+                after_star.splitn(2, char::is_whitespace).nth(1).unwrap_or(after_star).trim()
+            } else {
+                after_star
+            };
+            // strip an optional trailing number+space if niri puts it before the name
+            let layout = if rest.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+                rest.splitn(2, char::is_whitespace).nth(1).unwrap_or(rest).trim()
+            } else {
+                rest
+            };
+            return layout.chars().take(2).collect::<String>().to_uppercase();
+        }
+    }
+    String::new()
+}
+
+fn layout_flag(code: &str) -> &'static str {
+    match code {
+        "EN" | "US" => "🇺🇸",
+        "GB"        => "🇬🇧",
+        "RU"        => "🇷🇺",
+        "GE"        => "🇩🇪", // German
+        "FR"        => "🇫🇷",
+        "SP"        => "🇪🇸", // Spanish
+        "IT"        => "🇮🇹",
+        "PO"        => "🇵🇱", // Polish
+        "UK"        => "🇺🇦", // Ukrainian
+        "CZ"        => "🇨🇿",
+        "SK"        => "🇸🇰",
+        "HU"        => "🇭🇺",
+        "RO"        => "🇷🇴",
+        "TR"        => "🇹🇷",
+        "JA"        => "🇯🇵",
+        "CH"        => "🇨🇳", // Chinese
+        "KO"        => "🇰🇷",
+        "AR"        => "🇸🇦",
+        "HE"        => "🇮🇱",
+        "FI"        => "🇫🇮",
+        "SW"        => "🇸🇪", // Swedish
+        "DA"        => "🇩🇰",
+        "NO"        => "🇳🇴",
+        "DU"        => "🇳🇱", // Dutch
+        "PT"        => "🇵🇹",
+        "BE"        => "🇧🇾", // Belarusian
+        "AZ"        => "🇦🇿",
+        "KA"        => "🇬🇪", // Georgian
+        "HY"        => "🇦🇲", // Armenian
+        _           => "🌐",
+    }
+}
+
+fn format_layout_label(code: &str) -> String {
+    format!("{} {}", code, layout_flag(code))
+}
+
 pub fn new_scratchpad() -> gtk4::Box {
     let module = TextModule::new("scratchpad");
     let container_weak = module.container.downgrade();

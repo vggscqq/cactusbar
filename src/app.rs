@@ -103,6 +103,9 @@ pub fn new(
     if mods.keyboard_state {
         right.append(&crate::modules::input::new_keyboard_state());
     }
+    if mods.keyboard_layout {
+        right.append(&crate::modules::input::new_keyboard_layout());
+    }
     if mods.language {
         right.append(&crate::modules::input::new_language(&cfg));
     }
